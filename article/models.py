@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils.text import slugify
+from slugify import slugify
 
 
 class Category(models.Model):
@@ -7,8 +7,14 @@ class Category(models.Model):
     slug = models.SlugField(unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name)
+        if not self.slug or self.slug.strip() == '':
+            base_slug = slugify(self.name) or 'category'
+            slug = base_slug
+            counter = 1 
+            while Category.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter+=1
+            self.slug = slug
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -28,13 +34,14 @@ class Post(models.Model):
     slug = models.SlugField(unique=True, blank=True)
 
     def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.title)
-            counter = 1
-            original_slug = self.slug
-            while Post.objects.filter(slug=self.slug).exists():
-                self.slug = f"{original_slug}-{counter}"
+        if not self.slug or self.slug.strip() == '':
+            base_slug = slugify(self.title) or 'post'
+            slug = base_slug
+            counter = 1 
+            while Post.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
                 counter+=1
+            self.slug = slug
         super().save(*args, **kwargs)
 
     def __str__(self):
